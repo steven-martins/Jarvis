@@ -2,10 +2,11 @@ __author__ = 'Steven'
 
 import shlex
 import types
-import os, inspect
+import os, inspect, re
 import pyclbr
 from actions.Action import Action
 from actions.base import Ask
+from actions.fun import Coffee, ImageMe
 
 class Controller():
     def __init__(self):
@@ -16,6 +17,9 @@ class Controller():
         self.registerAction("list", self.list)
         self.registerAction("register", self.register)
         self.registerAction("unregister", self.unregister)
+        self.registerAction("coffee", Coffee)
+        self.registerAction('image me (?P<search_query>.*)$', ImageMe)
+        self.registerAction("^reload actions!$", self.reload)
 
     def help(self, *args):
         """ Display this message."""
@@ -53,6 +57,9 @@ class Controller():
         self.unregisterAction(args[1])
         return "%s unregistered." % args[1]
 
+    def reload(self, *args):
+        pass
+
     def register(self, *args):
         """ register new actions: register name package.module.Class """
         print("register(" + str(args) + ")")
@@ -66,22 +73,28 @@ class Controller():
         return "impossible to register this action. Some parameters are missing. try again."
 
     def registerAction(self, word, cmd):
-        self._actions[word.lower()] = cmd
+        self._actions[word] = cmd
 
     def unregisterAction(self, word):
-        if word.lower() in self._actions:
-            del self._actions[word.lower()]
+        if word in self._actions:
+            del self._actions[word]
 
     def _do(self, action, params):
         print("action: " + action)
         print("params: " + str(params))
-        if action in self._actions:
-            if isinstance(self._actions[action], types.FunctionType):
-                return self._actions[action](*params)
-            elif isinstance(self._actions[action], types.MethodType):
-                return self._actions[action](self, *params)
-            elif issubclass(self._actions[action], Action):
-                return self._actions[action]().run(*params)
+        for k, v in self._actions.items():
+            #if action in self._actions:
+            print("re.search('%s', '%s')" % (k, " ".join([action] + params)))
+            match = re.search(k, " ".join([action] + params))
+            if match:
+                print("matched: %s" % k)
+                dict = match.groupdict()
+                if isinstance(v, types.FunctionType):
+                    return v(params, **dict)
+                elif isinstance(v, types.MethodType):
+                    return v(self, params, **dict)
+                elif issubclass(v, Action):
+                    return v().run(params, **dict)
         raise Exception("Unknown action")
 
     def do(self, msg):
