@@ -108,11 +108,13 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def muc_message(self, msg):
         if "delay" in msg.keys():
             print("delayed...")
-        elif msg['mucnick'] != self.nick and self.nickSlug in msg['body']:
+        # and self.nickSlug in msg['body']
+        elif msg['mucnick'] != self.nick:
             print("muc_message: " + str(msg))
             try:
-                msg['body'] = msg['body'].replace(self.nickSlug, "")
-                result = self._controller.do(msg['body'])
+                #msg['body'] = msg['body'].replace(self.nickSlug, "")
+                result = self._controller.do(msg['body'], mtype=msg["type"], mfrom=msg["from"])
+                print(str(result))
                 if isinstance(result, types.DictType) and "type" in result:
                     if result["type"] == "image":
                         self.send_image(msg["from"], result["image"], mtype=msg["type"])
@@ -123,6 +125,9 @@ class Jarvis(sleekxmpp.ClientXMPP):
                         self._questions[msg["from"]] = []
                     self._questions[msg["from"]].append(result)
                     msg.reply(result.message()).send()
+                elif isinstance(result, types.NoneType):
+                    print("ici ???")
+                    return
                 else:
                     msg.reply(result).send()
             except Exception as e:
@@ -148,7 +153,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                             del self._questions[msg["from"]][0]
                         #msg.reply(res).send()
                     else:
-                        result = self._controller.do(msg['body'])
+                        result = self._controller.do(msg['body'], mfrom=msg["from"])
                     if isinstance(result, types.DictType) and "type" in result:
                         if result["type"] == "image":
                             self.send_image(msg["from"], result["image"], mtype=msg["type"])
@@ -165,6 +170,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                     msg.reply("An error occured: %s" % str(e)).send()
 
 
+
 def main():
     auth = Conf("bot.conf").getSection("auth")
     if not "login" in auth or not "password" in auth:
@@ -175,8 +181,6 @@ def main():
     xmpp.register_plugin('xep_0030') # Service Discovery
     xmpp.register_plugin('xep_0199')
     xmpp.register_plugin('xep_0085') # status message
-    xmpp.register_plugin('xep_0066') # Image : OOB
-    xmpp.register_plugin('xep_0231') # Image : OOB
     xmpp.register_plugin('xep_0071') # Xhtml
     xmpp.register_plugin('xep_0045') # multi user chan
     xmpp.register_plugin('xep_0203')  # XMPP Delayed messages

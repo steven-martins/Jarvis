@@ -1,6 +1,11 @@
 __author__ = 'Steven'
 
-class Action(object):
+from storage import Storage
+from hipchat import HipChat
+
+class Action(Storage, HipChat):
+    is_action = True
+
     def __init__(self):
         self._version = 1.0
 

@@ -1,20 +1,59 @@
 __author__ = 'Steven'
 
 import time
-from . import Action
+from actions import Action
 from query import Question
+from decorators import hear, respond_to
+
+class ThanksPlugin(Action.Action):
+    @respond_to("^(?:thanks|thank you|tx|thx|ty|tyvm)")
+    def respond_to_thanks(self, *args, **kwargs):
+        return "You're welcome!"
+
+    @hear("(thanks|thank you|tx|thx|ty|tyvm),? (jarv|jarvis)")
+    def hear_thanks(self, *args, **kwargs):
+        return "You're welcome!"
+
+class Hello(Action.Action):
+    @respond_to("hi$")
+    def hi(self, *args, **kwargs):
+        """hi: I know how to say hello!"""
+        return "hello!"
+
+    @respond_to("hello$")
+    def hello(self, *args, **kwargs):
+        return "hi!"
+
+class Love(Action.Action):
+    @hear("i love(?: you,?)? (jarv|jarvis)")
+    def hear_love(self, *args, **kwargs):
+        return "I love you, too."
+
+    @respond_to("i love you")
+    def hear_love_direct(self, *args, **kwargs):
+        return "I love you, too."
+
+    @hear("(jarv|jarvis) is awesome")
+    def hear_i_am_awesome(self, *args, **kwargs):
+        return "Aww, thanks!"
+
+    @respond_to("you(?: are|'re)? (?:awesome|rock)")
+    def hear_you_are_awesome(self, params, mfrom, *args, **kwargs):
+        return "Takes one to know one, %s." % mfrom
 
 class Time(Action.Action):
-    def run(self, *args):
+    @respond_to("what time is it ?")
+    def run(self, *args, **kwargs):
         return "Current time: %s" % (str(time.strftime("%H:%M:%S")))
 
 class Date(Action.Action):
-    def run(self, *args):
+    @respond_to("what date is it ?")
+    def run(self, *args, **kwargs):
         return "Current date: %s" % (str(time.strftime("%d/%m/%Y")))
 
 class Ask(Action.Action):
     """Module for testing the questions system."""
-    def run(self, *args):
+    def run(self, *args, **kwargs):
         return Question("How old are you ?", [
             ("-", lambda *args: "You're not born yet!"),
             ("42", lambda *args: "Oh, why 42 ?! U kiddin' ?"),
