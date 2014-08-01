@@ -1,3 +1,7 @@
 [auth]
 login=
 password=
+room=
+
+[hipchat]
+auth_token=

@@ -47,7 +47,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
         self.add_event_handler("groupchat_message", self.muc_message)
         self.add_event_handler("groupchat_invite", self.accept_invite)
 
-        self.room = [room, "147982_skies_-_tmp@conf.hipchat.com"]
+        self.room = room.split(", ") if ", " in room else room
         self.nick = "Jarvis S"
         self.nickSlug = "@Jarvis"
         self._users = {}
