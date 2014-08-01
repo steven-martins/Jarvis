@@ -47,7 +47,6 @@ class Jarvis(sleekxmpp.ClientXMPP):
         self.add_event_handler('session_start', self.start)
         self.add_event_handler('message', self.message)
         self.add_event_handler('chatstate', self.chatstate)
-        #self.add_event_handler('my_event', self.myevent)
         self.add_event_handler('my_ping', self.myping)
         self.add_event_handler('presence', self.presence)
         self.add_event_handler('notif', self.recv_notif)
@@ -77,7 +76,6 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def presence(self, event):
         print(str(event))
 
-
     def chatstate(self, event):
         print(str(event['body']))
         #composing, paused, inactive
@@ -86,17 +84,13 @@ class Jarvis(sleekxmpp.ClientXMPP):
        print("Invite from %s to %s" %(inv["from"], inv["to"]))
        self.plugin['xep_0045'].joinMUC(inv["from"], self.nick, wait=True)
 
-    def myevent(self, event):
-        print(str(event))
-        #self.send_message(mto="", mbody=event["type"], mtype="chat")
-
     def recv_notif(self, notif):
         print("recv_notif %s" % notif)
         n = Notif(notif)
         h = HipChat()
-        if n.type == "remind":
+        if n.type == "reminder":
             h.sayHtml("@%s, I have to remind you to %s" % (n.to, n.message) if n.to else n.message, n.room)
-        if n.type == "notification":
+        elif n.type == "notification":
             h.sayHtml("@%s %s" % (n.to, n.message) if n.to else n.message, n.room)
 
     def myping(self, event):
@@ -107,19 +101,6 @@ class Jarvis(sleekxmpp.ClientXMPP):
         m.send()
         print("ping")
 
-    #def send_image(self, jid, img_url, mfrom, mtype='groupchat'):
-    #    print("sending_image")
-    #    m = self.make_message(jid, mfrom=mfrom,mtype=mtype, mhtml="Hello in <b>bold?</b> ??")
-        #m['to'] = jid
-        #m['type'] = mtype
-        #m['body'] = "http://i.telegraph.co.uk/multimedia/archive/02679/coffee_2679924b.jpg"
-        #m["body"] = "That ?"
-        #m['html']['body'] = "Hello in <b>bold?</b> ??"
-        #m['html']['body'] = '<img src="http://i.telegraph.co.uk/multimedia/archive/02679/coffee_2679924b.jpg" />'
-        #m['oob']['url'] = img_url
-        #print(str(m))
-    #    m.send()
-
     def muc_message(self, msg):
         if "delay" in msg.keys():
             print("delayed...")
@@ -128,7 +109,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
             print("muc_message: " + str(msg))
             try:
                 #msg['body'] = msg['body'].replace(self.nickSlug, "")
-                result = self._controller.do(Msg(msg))
+                result = self._controller.do(Msg(msg, self))
                 print(str(result))
                 if isinstance(result, types.DictType) and "type" in result:
                     if result["type"] == "image":
@@ -153,9 +134,8 @@ class Jarvis(sleekxmpp.ClientXMPP):
             #                  mtype='groupchat')
 
     def message(self, msg):
-        print("message: " + str(msg))
+        #print("message: " + str(msg))
         if "delay" in msg.keys():
-            print("delayed...")
             pass
         if str(msg["from"]).startswith("147982_"):
             if msg['type'] in ('normal', 'chat'):
@@ -168,7 +148,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                             del self._questions[msg["from"]][0]
                         #msg.reply(res).send()
                     else:
-                        result = self._controller.do(Msg(msg))
+                        result = self._controller.do(Msg(msg, self))
                     if isinstance(result, types.DictType) and "type" in result:
                         if result["type"] == "image":
                             self.send_image(msg["from"], result["image"], mtype=msg["type"])

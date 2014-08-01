@@ -1,6 +1,8 @@
 __author__ = 'Steven'
 
-import redis
+import redis, datetime
+
+from message import Notif
 
 class Storage(object):
     _db = None
@@ -24,6 +26,16 @@ class Storage(object):
             return self.getDb().set(key, value)
         return False
 
-
     def addNotif(self, timestamp, notif):
         self.getDb().zadd("notif", notif.toJson(), float(timestamp))
+
+    def notifs(self, type="reminder", owner=None):
+        elems = self.getDb().zrange("notif", 0, -1, withscores=True)
+        res = []
+        for a in elems:
+            d_str = datetime.datetime.fromtimestamp(int(a[1])).strftime('%Y-%m-%d %H:%M')
+            n = Notif(a[0])
+            print("n: " + str(n))
+            if not owner or (hasattr(n, "owner") and n.owner == owner):
+               res.append((d_str, n))
+        return res

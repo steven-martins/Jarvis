@@ -3,8 +3,9 @@ __author__ = 'Steven'
 import re, json
 
 class Msg(object):
-    def __init__(self, msg):
+    def __init__(self, msg, base=None):
         self.datas = {}
+        self.base = base
         self.body = msg["body"]
         self.mtype = msg["type"]
         self.mfrom = msg["from"]
@@ -33,6 +34,7 @@ class Notif(dict):
             print("Notif loading exception: %s" % (str(e)))
         # check minimal:
         # room, message
+        # owner
         # bonus: date, type, content-type
 
 
