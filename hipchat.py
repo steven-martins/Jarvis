@@ -6,10 +6,12 @@ from loader import Conf
 import requests
 
 class HipChat(object):
-    def sayHtml(self, message, room="Skies", handle=None):
+    def sayHtml(self, message, room=None, handle=None):
         if not handle:
             from controller import HANDLE
             handle = HANDLE
+        if not room:
+            raise Exception("Room not provided")
         data = {
             "room_id": room,
             "from": handle,
@@ -22,5 +24,6 @@ class HipChat(object):
         print(str(results))
         return results
 
-    def sayImage(self, url, width="350px", room="Skies", handle=None):
-        self.sayHtml("<img width='%s' src='%s' />" % (width, url), room, handle)
+    def sayImage(self, url, width="350px", room=None, handle=None):
+        if room:
+            self.sayHtml("<img width='%s' src='%s' />" % (width, url), room, handle)

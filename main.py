@@ -13,6 +13,7 @@ from threading import Thread
 from controller import Controller
 from loader import Conf
 from query import Question
+from message import Msg
 
 class Events(Thread):
     def __init__(self, bot):
@@ -40,12 +41,13 @@ class Jarvis(sleekxmpp.ClientXMPP):
         self.add_event_handler('session_start', self.start)
         self.add_event_handler('message', self.message)
         self.add_event_handler('chatstate', self.chatstate)
-        self.add_event_handler('my_event', self.myevent)
+        #self.add_event_handler('my_event', self.myevent)
         self.add_event_handler('my_ping', self.myping)
         self.add_event_handler('presence', self.presence)
-        #self.add_event_handler("groupchat_message", self.muc_message)
         self.add_event_handler("groupchat_message", self.muc_message)
-        self.room = room
+        self.add_event_handler("groupchat_invite", self.accept_invite)
+
+        self.room = [room, "147982_skies_-_tmp@conf.hipchat.com"]
         self.nick = "Jarvis S"
         self.nickSlug = "@Jarvis"
         self._users = {}
@@ -55,9 +57,15 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def start(self, event):
         self.get_roster()
         self.send_presence()
-        self.plugin['xep_0045'].joinMUC(self.room,
-                                    self.nick,
-                                    wait=True)
+        if isinstance(self.room, types.StringType):
+            self.plugin['xep_0045'].joinMUC(self.room,
+                                        self.nick,
+                                        wait=True)
+        else:
+            for r in self.room:
+                self.plugin['xep_0045'].joinMUC(r,
+                                        self.nick,
+                                        wait=True)
 
     def presence(self, event):
         print(str(event))
@@ -66,6 +74,10 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def chatstate(self, event):
         print(str(event['body']))
         #composing, paused, inactive
+
+    def accept_invite(self, inv):
+       print("Invite from %s to %s" %(inv["from"], inv["to"]))
+       self.plugin['xep_0045'].joinMUC(inv["from"], self.nick, wait=True)
 
     def myevent(self, event):
         print(str(event))
@@ -79,31 +91,18 @@ class Jarvis(sleekxmpp.ClientXMPP):
         m.send()
         print("ping")
 
-    def send_image(self, jid, img_url, mtype='groupchat'):
-        print("sending_image")
-        m = self.Message()
-        m['to'] = jid
-        m['type'] = mtype
+    #def send_image(self, jid, img_url, mfrom, mtype='groupchat'):
+    #    print("sending_image")
+    #    m = self.make_message(jid, mfrom=mfrom,mtype=mtype, mhtml="Hello in <b>bold?</b> ??")
+        #m['to'] = jid
+        #m['type'] = mtype
         #m['body'] = "http://i.telegraph.co.uk/multimedia/archive/02679/coffee_2679924b.jpg"
         #m["body"] = "That ?"
-        m['html']['body'] = "Hello in <b>bold?</b> ??"
+        #m['html']['body'] = "Hello in <b>bold?</b> ??"
         #m['html']['body'] = '<img src="http://i.telegraph.co.uk/multimedia/archive/02679/coffee_2679924b.jpg" />'
         #m['oob']['url'] = img_url
-        print(str(m))
-        m.send()
-
-    #def send_image(self, jid, img_file_path, mtype='groupchat'):
-    #    m = self.Message()
-    #    m['to'] = jid
-    #    m['type'] = mtype
-    #    with open(img_file_path, 'rb') as img_file:
-    #        img = img_file.read()
-    #    if img:
-    #        cid = self['xep_0231'].set_bob(img, 'image/png')
-    #        m['body'] = 'Tried sending an image using BOB'
-    #        m['html']['body'] = '<img src="cid:%s" />' % cid
-    #        print(str(m))
-    #        m.send()
+        #print(str(m))
+    #    m.send()
 
     def muc_message(self, msg):
         if "delay" in msg.keys():
@@ -113,11 +112,11 @@ class Jarvis(sleekxmpp.ClientXMPP):
             print("muc_message: " + str(msg))
             try:
                 #msg['body'] = msg['body'].replace(self.nickSlug, "")
-                result = self._controller.do(msg['body'], mtype=msg["type"], mfrom=msg["from"])
+                result = self._controller.do(Msg(msg))
                 print(str(result))
                 if isinstance(result, types.DictType) and "type" in result:
                     if result["type"] == "image":
-                        self.send_image(msg["from"], result["image"], mtype=msg["type"])
+                        self.send_image(msg["from"], result["image"], mfrom=msg["to"], mtype=msg["type"])
                     else:
                         msg.reply(result).send()
                 elif isinstance(result, Question):
@@ -153,7 +152,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                             del self._questions[msg["from"]][0]
                         #msg.reply(res).send()
                     else:
-                        result = self._controller.do(msg['body'], mfrom=msg["from"])
+                        result = self._controller.do(Msg(msg))
                     if isinstance(result, types.DictType) and "type" in result:
                         if result["type"] == "image":
                             self.send_image(msg["from"], result["image"], mtype=msg["type"])

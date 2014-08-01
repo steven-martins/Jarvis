@@ -85,12 +85,6 @@ class Controller():
                         "admin_only": fn.meta["only_to_admin"],
                         "__doc__": fn.meta["__doc__"]
                     })
-        print(str(self._actions))
-        #sys.exit(1)
-
-
-
-
 
     def help(self, *args, **kwargs):
         print("args: " + str(args))
@@ -111,34 +105,20 @@ class Controller():
         if word in self._actions:
             del self._actions[word]
 
-    def _do(self, action, params, mtype, mfrom):
-        print("action: " + action)
-        print("params: " + str(params))
+    def _do(self, message):
+        print(str(message))
         for k, v in self._actions.items():
-            #if action in self._actions:
-            print("re.search('%s', '%s')" % (k, " ".join([action] + params)))
-            match = re.search(k, " ".join([action] + params))
-            if match and ((mtype == "groupchat" and v["private_only"] == False)
-                            or (mtype != "groupchat" and v["private_only"] == True)):
+            body = message.body
+            #print("re.search('%s', '%s')" % (k, body))
+            match = re.search(k, body)
+            if match and ((message.mtype == "groupchat" and v["private_only"] == False)
+                            or (message.mtype != "groupchat" and v["private_only"] == True)):
                 print("matched: %s" % k)
                 dict = match.groupdict()
-                dict["mfrom"] = mfrom
-                #if isinstance(v, types.FunctionType):
-                #    return v(params, **dict)
-                #elif isinstance(v, types.DictType):
-                return v["fn"](params, **dict)
-                #elif isinstance(v, types.MethodType):
-                #    return v(self, params, **dict)
-                #elif issubclass(v, Action):
-                #    return v().run(params, **dict)
-                #raise Exception("Unknown action")
-        if mtype == "chat":
+                return v["fn"](message, **dict)
+        if message.mtype == "chat":
             raise Exception("Unknown action")
         return None
 
-    def do(self, msg, mtype="chat", mfrom=""):
-        # acting as command line for now
-        array = shlex.split(msg)
-        if len(array) == 0:
-            raise Exception("Wrong action")
-        return self._do(array[0], array[1:], mtype, mfrom)
+    def do(self, msg):
+        return self._do(msg)
