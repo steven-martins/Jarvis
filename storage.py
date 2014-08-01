@@ -23,3 +23,7 @@ class Storage(object):
         if type == "key":
             return self.getDb().set(key, value)
         return False
+
+
+    def addNotif(self, timestamp, notif):
+        self.getDb().zadd("notif", notif.toJson(), float(timestamp))

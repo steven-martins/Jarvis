@@ -15,6 +15,12 @@ from loader import Conf
 from query import Question
 from message import Msg
 
+from hipchat import HipChat
+
+from message import Notif
+
+from scheduler import Scheduler
+
 class Events(Thread):
     def __init__(self, bot):
         Thread.__init__(self)
@@ -44,6 +50,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
         #self.add_event_handler('my_event', self.myevent)
         self.add_event_handler('my_ping', self.myping)
         self.add_event_handler('presence', self.presence)
+        self.add_event_handler('notif', self.recv_notif)
         self.add_event_handler("groupchat_message", self.muc_message)
         self.add_event_handler("groupchat_invite", self.accept_invite)
 
@@ -82,6 +89,15 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def myevent(self, event):
         print(str(event))
         #self.send_message(mto="", mbody=event["type"], mtype="chat")
+
+    def recv_notif(self, notif):
+        print("recv_notif %s" % notif)
+        n = Notif(notif)
+        h = HipChat()
+        if n.type == "remind":
+            h.sayHtml("@%s, I have to remind you to %s" % (n.to, n.message) if n.to else n.message, n.room)
+        if n.type == "notification":
+            h.sayHtml("@%s %s" % (n.to, n.message) if n.to else n.message, n.room)
 
     def myping(self, event):
         m = self.Message()
@@ -186,6 +202,8 @@ def main():
     xmpp.register_plugin('xep_0249')  # XMPP direct MUC invites
     e = Events(xmpp)
     e.start()
+    s = Scheduler(xmpp)
+    s.start()
 
     if xmpp.connect():
         xmpp.process(block=True)

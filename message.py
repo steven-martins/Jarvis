@@ -23,9 +23,10 @@ class Notif(dict):
     __setattr__= dict.__setitem__
     __delattr__= dict.__delitem__
 
-    def __init__(self, j):
+    def __init__(self, j="{}"):
         try:
             datas = json.loads(j)
+            print("Loading a Notification: %s" % str(datas))
             for k, v in datas.items():
                 self.__setattr__(k, v)
         except Exception as e:
@@ -34,3 +35,6 @@ class Notif(dict):
         # room, message
         # bonus: date, type, content-type
 
+
+    def toJson(self):
+        return json.dumps(self)
