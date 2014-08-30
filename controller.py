@@ -10,9 +10,10 @@ from actions.fun import Coffee, ImageMe
 
 PLUGINS = [
     "actions",
-    ]
+]
 
 HANDLE = "Jarvis"
+
 
 class Controller():
     def __init__(self):
@@ -33,10 +34,10 @@ class Controller():
             path_name = None
             for mod in plugin.split('.'):
                 if path_name is not None:
-                    path_name=[path_name]
+                    path_name = [path_name]
                 file_name, path_name, description = imp.find_module(mod, path_name)
             self.plugins_dirs[os.path.abspath(path_name)] = plugin
-        self.plugins_dirs = dict(zip(self.plugins_dirs.values(),self.plugins_dirs.keys()))
+        self.plugins_dirs = dict(zip(self.plugins_dirs.values(), self.plugins_dirs.keys()))
 
         plugin_modules = {}
 
@@ -51,7 +52,7 @@ class Controller():
                             full_module_name = ".".join(path_components)
                             # Need to pass along module name, path all the way through
                             combined_name = ".".join([plugin_name, module_name])
-
+                            #print(str(combined_name))
                             module = imp.load_source(module_name, module_path)
                             for class_name, cls in inspect.getmembers(module, predicate=inspect.isclass):
                                 try:
@@ -61,20 +62,23 @@ class Controller():
                                             "class": cls,
                                             "module": module,
                                             "full_module_name": full_module_name,
-                                            })
+                                        })
                                 except Exception as e:
                                     print("Error bootstrapping %s: %s" % (class_name, str(e)))
                         except Exception as e:
                             print("Error loading %s: %s" % (module_path, str(e)))
+        #print(str(self.plugins))
 
     def autoregister(self):
         for plugin_info in self.plugins:
-            for function_name, fn in inspect.getmembers(plugin_info["class"], predicate=inspect.ismethod):
+            #print("inspect: %s "  % inspect.getmembers(plugin_info["class"], predicate=inspect.isfunction))
+            for function_name, fn in inspect.getmembers(plugin_info["class"], predicate=inspect.isfunction):
+                #print("function_name: %s "  % function_name)
                 if hasattr(fn, "meta") and "regex" in fn.meta:
                     regex = fn.meta["regex"]
                     regex = "(?i)%s" % regex
                     if fn.meta["only_to_direct_mentions"]:
-						regex = "@%s %s" % (HANDLE, regex)
+                        regex = "@%s %s" % (HANDLE, regex)
                     self.registerAction(regex, {
                         "function_name": function_name,
                         "class_name": plugin_info["name"],
@@ -107,12 +111,13 @@ class Controller():
 
     def _do(self, message):
         print(str(message))
+        #print("actions: %s" % str(self._actions))
         for k, v in self._actions.items():
             body = message.body
             #print("re.search('%s', '%s')" % (k, body))
             match = re.search(k, body)
             if match and ((message.mtype == "groupchat" and v["private_only"] == False)
-                            or (message.mtype != "groupchat" and v["private_only"] == True)):
+                          or (message.mtype != "groupchat" and v["private_only"] == True)):
                 print("matched: %s" % k)
                 dict = match.groupdict()
                 return v["fn"](message, **dict)

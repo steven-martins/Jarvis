@@ -6,11 +6,11 @@ from actions import Action
 class Memory(Action.Action):
 
     @one_to_one("^How big is the db?", admin_only=True)
-    def db_size(self, *args, **kwargs):
+    def db_size(self, message):
         return "Currently, %s of memory are used." % self.getStorageInfos()["used_memory_human"]
 
     @one_to_one("^Clear (?P<key>.*)", admin_only=True)
-    def clear_storage(self, params, key, *args, **kwargs):
+    def clear_storage(self, message, key):
         if not key:
             return "Sorry, you didn't say what to clear."
         else:
@@ -18,7 +18,7 @@ class Memory(Action.Action):
             return "Ok. Clearing the storage for %s" % key
 
     @one_to_one("^Show (?:me )?(?:the )?storage for (?P<key>.*)", admin_only=True)
-    def show_storage(self, params, key=None, *args, **kwargs):
+    def show_storage(self, message, key=None):
         if not key:
             return "Not sure what you're looking for."
         else:
@@ -26,7 +26,7 @@ class Memory(Action.Action):
             return "%s is %s" % (key, val)
 
     @one_to_one("^Store (?:me )?(?P<value>.*) for (?P<key>.*)", admin_only=True)
-    def add_storage(self, params, key=None, value=None, *args, **kwargs):
+    def add_storage(self, message, key=None, value=None):
         if not key:
             return "Not sure what you're looking for."
         else:

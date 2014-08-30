@@ -18,7 +18,17 @@ class Msg(object):
     def __str__(self):
         return "body(%s), type(%s), from(%s), exp(%s), mucnick(%s), room(%s)" % (self.body, self.mtype, self.mfrom, self.exp, self.mucnick, self.room)
 
-
+"""
+        notif = Notif()
+        notif.room = message.room
+        notif.message = action
+        notif.type = "reminder"
+        notif.timestamp = d
+        notif.date = str(obj_d.strftime("%Y-%m-%d %H:%M:%S"))
+        notif.inserted_at = int(time.time())
+        notif.to = message.mucnick
+        notif.owner = message.mucnick
+"""
 class Notif(dict):
     __getattr__= dict.__getitem__
     __setattr__= dict.__setitem__
@@ -26,7 +36,10 @@ class Notif(dict):
 
     def __init__(self, j="{}"):
         try:
-            datas = json.loads(j)
+            if isinstance(j, dict):
+                datas = j
+            else:
+                datas = json.loads(j)
             print("Loading a Notification: %s" % str(datas))
             for k, v in datas.items():
                 self.__setattr__(k, v)
@@ -37,6 +50,9 @@ class Notif(dict):
         # owner
         # bonus: date, type, content-type
 
+    @staticmethod
+    def fromZero():
+        return Notif()
 
     def toJson(self):
         return json.dumps(self)

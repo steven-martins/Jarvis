@@ -20,6 +20,7 @@ from hipchat import HipChat
 from message import Notif
 
 from scheduler import Scheduler
+from zero.client import ClientTask
 
 class Events(Thread):
     def __init__(self, bot):
@@ -63,7 +64,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
     def start(self, event):
         self.get_roster()
         self.send_presence()
-        if isinstance(self.room, types.StringType):
+        if isinstance(self.room, str):
             self.plugin['xep_0045'].joinMUC(self.room,
                                         self.nick,
                                         wait=True)
@@ -111,7 +112,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                 #msg['body'] = msg['body'].replace(self.nickSlug, "")
                 result = self._controller.do(Msg(msg, self))
                 print(str(result))
-                if isinstance(result, types.DictType) and "type" in result:
+                if isinstance(result, dict) and "type" in result:
                     if result["type"] == "image":
                         self.send_image(msg["from"], result["image"], mfrom=msg["to"], mtype=msg["type"])
                     else:
@@ -121,7 +122,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                         self._questions[msg["from"]] = []
                     self._questions[msg["from"]].append(result)
                     msg.reply(result.message()).send()
-                elif isinstance(result, types.NoneType):
+                elif result is None:
                     print("ici ???")
                     return
                 else:
@@ -149,7 +150,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
                         #msg.reply(res).send()
                     else:
                         result = self._controller.do(Msg(msg, self))
-                    if isinstance(result, types.DictType) and "type" in result:
+                    if isinstance(result, dict) and "type" in result:
                         if result["type"] == "image":
                             self.send_image(msg["from"], result["image"], mtype=msg["type"])
                         else:
@@ -184,6 +185,8 @@ def main():
     e.start()
     s = Scheduler(xmpp)
     s.start()
+    t = ClientTask(xmpp)
+    t.start()
 
     if xmpp.connect():
         xmpp.process(block=True)

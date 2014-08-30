@@ -2,7 +2,10 @@
 
 import logging, string
 import fileinput
-from ConfigParser import ConfigParser, Error, NoOptionError
+try:
+    from ConfigParser import ConfigParser, Error, NoOptionError
+except:
+    from configparser import ConfigParser, Error, NoOptionError
 import os
 
 class Conf:
@@ -25,7 +28,7 @@ class Conf:
             logging.error("[Conf]" + self._filename + ": " + str(e))
         for key, value in data.items():
             if ", " in value:
-                data[key] = string.split(value, ", ")
+                data[key] = value.split(", ")
         return data
 
     def get(self, section, option, default=""):
