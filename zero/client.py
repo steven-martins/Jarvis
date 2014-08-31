@@ -7,13 +7,14 @@ import uuid
 import shlex
 
 from .tools import Pack
-
+from message import Msg
 # executer des actions zmq (synchrone?)
 # recevoir des infos
     # Soit des notifs
     # Soit le resultat de l'action (avec id)
 
 class ClientTask(threading.Thread):
+    clients = []
     """ClientTask"""
     def __init__(self, xmpp, identity=None):
         self.id = id
@@ -21,6 +22,7 @@ class ClientTask(threading.Thread):
         self._context = None
         self._socket = None
         self._xmpp = xmpp
+        self._xmpp._zmq = self
         self._identity = str(uuid.uuid4()) if not identity else identity
 
 
@@ -38,6 +40,7 @@ class ClientTask(threading.Thread):
             if self._socket in sockets:
                 msg = Pack.unpack_resp(self._socket.recv())
                 print('Client %s received: %s' % (self._identity, msg))
+                self._xmpp.event("zmq", Msg.fromZero(msg))
                 #self._xmpp.event('notif', Notif.fromZero(msg))
 
     def run(self, url='tcp://localhost:5570'):
@@ -46,8 +49,10 @@ class ClientTask(threading.Thread):
         self._socket.identity = self._identity.encode('ascii')
         self._socket.connect(url)
         print('Client %s started' % (self._identity))
+        ClientTask.clients.append(self)
         self.listen()
         self._socket.close()
+        ClientTask.clients.remove(self)
         self._context.term()
 
 

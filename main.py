@@ -51,6 +51,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
         self.add_event_handler('my_ping', self.myping)
         self.add_event_handler('presence', self.presence)
         self.add_event_handler('notif', self.recv_notif)
+        self.add_event_handler('zmq', self.recv_events)
         self.add_event_handler("groupchat_message", self.muc_message)
         self.add_event_handler("groupchat_invite", self.accept_invite)
 
@@ -60,6 +61,7 @@ class Jarvis(sleekxmpp.ClientXMPP):
         self._users = {}
         self._controller = Controller()
         self._questions = {}
+        self._zmq = None
 
     def start(self, event):
         self.get_roster()
@@ -85,6 +87,21 @@ class Jarvis(sleekxmpp.ClientXMPP):
        print("Invite from %s to %s" %(inv["from"], inv["to"]))
        self.plugin['xep_0045'].joinMUC(inv["from"], self.nick, wait=True)
 
+    def send_msg(self, message, room=None):
+        matched = None
+        if not room:
+            room = message.exp
+        for r in self.room:
+            if "%s@" % room.replace(" ", "_") in r:
+                matched = r
+        self.send_message(mto=message.exp if not room else matched,
+                          mbody=message.body,
+                          mtype=message.mtype)
+
+    def recv_events(self, message):
+        print("recv_events %s" % str(message))
+        self.send_msg(message, message.room)
+
     def recv_notif(self, notif):
         print("recv_notif %s" % notif)
         n = Notif(notif)
@@ -104,7 +121,8 @@ class Jarvis(sleekxmpp.ClientXMPP):
 
     def muc_message(self, msg):
         if "delay" in msg.keys():
-            print("delayed...")
+            #print("delayed...")
+            pass
         # and self.nickSlug in msg['body']
         elif msg['mucnick'] != self.nick:
             print("muc_message: " + str(msg))
